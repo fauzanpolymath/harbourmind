@@ -1,8 +1,13 @@
-# config.py
-# TODO: Load and expose application configuration from environment variables.
-# Use pydantic-settings BaseSettings for typed, validated config.
-# Key settings:
-#   GOOGLE_API_KEY       - Gemini 1.5 Pro API key
-#   LLAMA_CLOUD_API_KEY  - LlamaParse API key
-#   LOG_LEVEL            - Logging verbosity
-#   APP_ENV              - "development" | "production"
+"""
+config.py  (src/core/config.py)
+---------------------------------
+Re-exports the canonical Config class from src.utils.config so that both
+import paths work:
+
+    from src.utils.config import Config   # primary (used in tests)
+    from src.core.config import Config    # alternate (used in core modules)
+"""
+
+from src.utils.config import Config  # noqa: F401  (re-export)
+
+__all__ = ["Config"]

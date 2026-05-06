@@ -27,5 +27,5 @@ COPY . .
 
 EXPOSE 8000
 
-# TODO: Replace --reload with a production ASGI server config (e.g. gunicorn) for prod
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# Use production ASGI server config (uvicorn without --reload)
+CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000"]

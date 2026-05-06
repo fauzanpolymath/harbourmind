@@ -9,7 +9,7 @@ services:
     ports:
       - "8000:8000"
     env_file:
-      - .env
+      - .hmenv.txt
     volumes:
       # Mount source for hot-reload during development
       - .:/app
