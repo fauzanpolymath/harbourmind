@@ -486,6 +486,337 @@
             }
         }
 
+        /* ========== INTERACTIVE DEMO ========== */
+        .demo-section {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 1), rgba(30, 41, 59, 0.8));
+        }
+
+        .upload-area {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin: 50px 0;
+        }
+
+        .upload-box {
+            padding: 40px;
+            background-color: rgba(30, 41, 59, 0.8);
+            border: 2px dashed #14b8a6;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .upload-box:hover {
+            background-color: rgba(30, 41, 59, 1);
+            border-color: #f59e0b;
+            box-shadow: 0 10px 30px rgba(20, 184, 166, 0.1);
+        }
+
+        .upload-box h3 {
+            color: #14b8a6;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        .upload-box p {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            margin-bottom: 15px;
+        }
+
+        .upload-box input[type="file"] {
+            display: none;
+        }
+
+        .file-name {
+            display: block;
+            margin-top: 10px;
+            color: #10b981;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .submit-btn {
+            display: block;
+            margin: 30px auto;
+            padding: 16px 48px;
+            background-color: #f59e0b;
+            color: #0f172a;
+            border: none;
+            border-radius: 6px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .submit-btn:hover:not(:disabled) {
+            background-color: #d97706;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(245, 158, 11, 0.3);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(245, 158, 11, 0.3);
+            border-top-color: #f59e0b;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .results-section {
+            margin-top: 50px;
+            padding: 40px;
+            background-color: rgba(30, 41, 59, 0.8);
+            border-radius: 8px;
+            border: 1px solid rgba(100, 116, 139, 0.3);
+            display: none;
+        }
+
+        .results-section.active {
+            display: block;
+            border-color: #10b981;
+        }
+
+        .results-header {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(100, 116, 139, 0.3);
+        }
+
+        .result-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .result-label {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+        }
+
+        .result-value {
+            font-size: 1.3rem;
+            color: #10b981;
+            font-weight: 700;
+        }
+
+        .charges-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 30px 0;
+        }
+
+        .charges-table thead {
+            background-color: rgba(20, 184, 166, 0.1);
+        }
+
+        .charges-table th {
+            padding: 12px;
+            text-align: left;
+            color: #14b8a6;
+            font-weight: 600;
+            border-bottom: 2px solid rgba(20, 184, 166, 0.3);
+        }
+
+        .charges-table td {
+            padding: 12px;
+            border-bottom: 1px solid rgba(100, 116, 139, 0.2);
+            color: #cbd5e1;
+        }
+
+        .charges-table tr:hover {
+            background-color: rgba(20, 184, 166, 0.05);
+        }
+
+        .error-message {
+            padding: 20px;
+            background-color: rgba(220, 38, 38, 0.1);
+            border-left: 4px solid #dc2626;
+            border-radius: 6px;
+            color: #fca5a5;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .error-message.active {
+            display: block;
+        }
+
+        /* ========== LOGS DASHBOARD ========== */
+        .logs-section {
+            background-color: rgba(15, 23, 42, 0.6);
+        }
+
+        .filter-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background-color: rgba(30, 41, 59, 0.6);
+            border-radius: 6px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .filter-group label {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .filter-group input,
+        .filter-group select {
+            padding: 10px;
+            background-color: rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(100, 116, 139, 0.3);
+            border-radius: 4px;
+            color: #e2e8f0;
+            font-size: 0.95rem;
+        }
+
+        .filter-group input:focus,
+        .filter-group select:focus {
+            outline: none;
+            border-color: #14b8a6;
+            background-color: rgba(15, 23, 42, 1);
+        }
+
+        .logs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 30px;
+            background-color: rgba(30, 41, 59, 0.6);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .logs-table thead {
+            background-color: rgba(20, 184, 166, 0.1);
+        }
+
+        .logs-table th {
+            padding: 15px;
+            text-align: left;
+            color: #14b8a6;
+            font-weight: 600;
+            border-bottom: 2px solid rgba(20, 184, 166, 0.3);
+        }
+
+        .logs-table td {
+            padding: 15px;
+            border-bottom: 1px solid rgba(100, 116, 139, 0.2);
+            color: #cbd5e1;
+        }
+
+        .logs-table tbody tr:nth-child(even) {
+            background-color: rgba(30, 41, 59, 0.4);
+        }
+
+        .logs-table tbody tr:hover {
+            background-color: rgba(20, 184, 166, 0.08);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .status-badge.success {
+            background-color: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+
+        .status-badge.error {
+            background-color: rgba(220, 38, 38, 0.2);
+            color: #fca5a5;
+        }
+
+        .view-btn {
+            padding: 6px 14px;
+            background-color: #14b8a6;
+            color: #0f172a;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .view-btn:hover {
+            background-color: #0d9488;
+            transform: translateY(-2px);
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 30px;
+        }
+
+        .pagination button {
+            padding: 8px 12px;
+            background-color: rgba(30, 41, 59, 0.8);
+            color: #cbd5e1;
+            border: 1px solid rgba(100, 116, 139, 0.3);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .pagination button:hover:not(:disabled) {
+            background-color: #14b8a6;
+            color: #0f172a;
+            border-color: #14b8a6;
+        }
+
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination .active {
+            background-color: #14b8a6;
+            color: #0f172a;
+            border-color: #14b8a6;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #64748b;
+        }
+
         /* ========== FOOTER ========== */
         footer {
             padding: 40px 0;
@@ -910,6 +1241,135 @@
         </div>
     </section>
 
+    <!-- ========== INTERACTIVE DEMO ========== -->
+    <section class="demo-section">
+        <div class="container">
+            <h2>Test it yourself</h2>
+            <p style="text-align: center; color: #94a3b8; margin-bottom: 40px;">Upload a port tariff PDF and vessel details PDF to calculate charges instantly.</p>
+
+            <div class="upload-area">
+                <div class="upload-box" onclick="document.getElementById('tariff-pdf').click()">
+                    <h3>📄 Port Tariff</h3>
+                    <p>Upload port tariff PDF</p>
+                    <small style="color: #64748b;">.pdf files only</small>
+                    <input type="file" id="tariff-pdf" accept=".pdf" onchange="updateFileName(this, 'tariff-name')">
+                    <span id="tariff-name" class="file-name"></span>
+                </div>
+                <div class="upload-box" onclick="document.getElementById('vessel-pdf').click()">
+                    <h3>🚢 Vessel Details</h3>
+                    <p>Upload vessel certificate PDF</p>
+                    <small style="color: #64748b;">.pdf files only</small>
+                    <input type="file" id="vessel-pdf" accept=".pdf" onchange="updateFileName(this, 'vessel-name')">
+                    <span id="vessel-name" class="file-name"></span>
+                </div>
+            </div>
+
+            <button class="submit-btn" onclick="calculateTariffs()" id="calculate-btn">Calculate Tariffs</button>
+
+            <div class="error-message" id="error-message"></div>
+
+            <div class="results-section" id="results-section">
+                <div class="results-header">
+                    <div class="result-item">
+                        <div class="result-label">Vessel</div>
+                        <div class="result-value" id="result-vessel">-</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">Port</div>
+                        <div class="result-value" id="result-port">-</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">Confidence</div>
+                        <div class="result-value" id="result-confidence">-</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">Processing Time</div>
+                        <div class="result-value" id="result-time">-</div>
+                    </div>
+                </div>
+
+                <h3 style="color: #14b8a6; margin-bottom: 15px;">Charges</h3>
+                <table class="charges-table">
+                    <thead>
+                        <tr>
+                            <th>Charge Type</th>
+                            <th style="text-align: right;">Amount (ZAR)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="charges-tbody">
+                    </tbody>
+                </table>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 30px;">
+                    <div style="padding: 15px; background-color: rgba(20, 184, 166, 0.1); border-radius: 6px;">
+                        <div style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 5px;">SUBTOTAL</div>
+                        <div style="font-size: 1.5rem; color: #f59e0b; font-weight: 700;" id="result-subtotal">-</div>
+                    </div>
+                    <div style="padding: 15px; background-color: rgba(20, 184, 166, 0.1); border-radius: 6px;">
+                        <div style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 5px;">VAT (15%)</div>
+                        <div style="font-size: 1.5rem; color: #f59e0b; font-weight: 700;" id="result-vat">-</div>
+                    </div>
+                    <div style="padding: 15px; background-color: rgba(16, 185, 129, 0.15); border-radius: 6px;">
+                        <div style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 5px;">GRAND TOTAL</div>
+                        <div style="font-size: 1.5rem; color: #10b981; font-weight: 700;" id="result-total">-</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== LOGS DASHBOARD ========== -->
+    <section class="logs-section">
+        <div class="container">
+            <h2>Recent calculations</h2>
+
+            <div class="filter-controls">
+                <div class="filter-group">
+                    <label>Port</label>
+                    <input type="text" id="filter-port" placeholder="e.g., Durban" onchange="refreshLogs()">
+                </div>
+                <div class="filter-group">
+                    <label>Vessel Name</label>
+                    <input type="text" id="filter-vessel" placeholder="e.g., SUDESTADA" onchange="refreshLogs()">
+                </div>
+                <div class="filter-group">
+                    <label>From Date</label>
+                    <input type="date" id="filter-from" onchange="refreshLogs()">
+                </div>
+                <div class="filter-group">
+                    <label>To Date</label>
+                    <input type="date" id="filter-to" onchange="refreshLogs()">
+                </div>
+            </div>
+
+            <div style="text-align: center; padding: 20px;">
+                <span class="spinner" id="logs-loading-spinner" style="display: none;"></span>
+                <span id="logs-status" style="color: #94a3b8;">Loading...</span>
+            </div>
+
+            <div id="logs-container">
+                <table class="logs-table">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Vessel</th>
+                            <th>Port</th>
+                            <th style="text-align: right;">Grand Total (ZAR)</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logs-tbody">
+                        <tr>
+                            <td colspan="6" class="no-data">No calculations yet. Upload PDFs above to get started.</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="pagination" id="logs-pagination"></div>
+            </div>
+        </div>
+    </section>
+
     <!-- ========== FOOTER ========== -->
     <footer>
         <div class="container">
@@ -919,7 +1379,7 @@
     </footer>
 
     <script>
-        // Smooth scroll for buttons
+        // ========== SMOOTH SCROLL ==========
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
                 e.preventDefault();
@@ -933,7 +1393,7 @@
             });
         });
 
-        // Add slight animation on scroll
+        // ========== SCROLL ANIMATIONS ==========
         const observerOptions = {
             threshold: 0.1,
             rootMargin: '0px 0px -100px 0px'
@@ -953,6 +1413,220 @@
             el.style.transform = 'translateY(20px)';
             el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
             observer.observe(el);
+        });
+
+        // ========== FILE UPLOAD ==========
+        function updateFileName(input, elementId) {
+            const element = document.getElementById(elementId);
+            if (input.files && input.files[0]) {
+                element.textContent = '✓ ' + input.files[0].name;
+            } else {
+                element.textContent = '';
+            }
+        }
+
+        // ========== CALCULATE TARIFFS ==========
+        async function calculateTariffs() {
+            const tariffFile = document.getElementById('tariff-pdf').files[0];
+            const vesselFile = document.getElementById('vessel-pdf').files[0];
+            const errorDiv = document.getElementById('error-message');
+            const btn = document.getElementById('calculate-btn');
+            const resultsSection = document.getElementById('results-section');
+
+            if (!tariffFile || !vesselFile) {
+                errorDiv.textContent = 'Please upload both files before calculating.';
+                errorDiv.classList.add('active');
+                return;
+            }
+
+            errorDiv.classList.remove('active');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>Calculating...';
+
+            const formData = new FormData();
+            formData.append('tariff_pdf', tariffFile);
+            formData.append('vessel_pdf', vesselFile);
+
+            try {
+                const response = await fetch('/api/v1/calculate-from-pdfs', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Calculation failed');
+                }
+
+                const result = await response.json();
+
+                // Display results
+                document.getElementById('result-vessel').textContent = result.vessel_name || '-';
+                document.getElementById('result-port').textContent = result.port || '-';
+                document.getElementById('result-confidence').textContent =
+                    (result.extraction_confidence * 100).toFixed(0) + '%';
+                document.getElementById('result-time').textContent =
+                    result.processing_time_ms + 'ms';
+
+                // Build charges table
+                const tbody = document.getElementById('charges-tbody');
+                tbody.innerHTML = '';
+                result.charges.forEach(charge => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td style="text-transform: capitalize;">${charge.charge_type.replace(/_/g, ' ')}</td>
+                        <td style="text-align: right; font-weight: 600; color: #cbd5e1;">
+                            ${parseFloat(charge.amount).toFixed(2)}
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+
+                document.getElementById('result-subtotal').textContent =
+                    'R ' + parseFloat(result.subtotal).toFixed(2);
+                document.getElementById('result-vat').textContent =
+                    'R ' + parseFloat(result.vat_amount).toFixed(2);
+                document.getElementById('result-total').textContent =
+                    'R ' + parseFloat(result.grand_total).toFixed(2);
+
+                resultsSection.classList.add('active');
+                resultsSection.scrollIntoView({ behavior: 'smooth' });
+
+                // Refresh logs after calculation
+                setTimeout(() => refreshLogs(), 1000);
+
+            } catch (error) {
+                errorDiv.textContent = 'Error: ' + error.message;
+                errorDiv.classList.add('active');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Calculate Tariffs';
+            }
+        }
+
+        // ========== LOGS DASHBOARD ==========
+        let currentPage = 1;
+        const logsPerPage = 10;
+        let allLogs = [];
+
+        async function refreshLogs() {
+            currentPage = 1;
+            await loadLogs();
+        }
+
+        async function loadLogs() {
+            const spinner = document.getElementById('logs-loading-spinner');
+            const status = document.getElementById('logs-status');
+
+            spinner.style.display = 'inline-block';
+            status.textContent = 'Loading...';
+
+            const port = document.getElementById('filter-port').value;
+            const vessel = document.getElementById('filter-vessel').value;
+            const fromDate = document.getElementById('filter-from').value;
+            const toDate = document.getElementById('filter-to').value;
+
+            let url = '/api/v1/logs?limit=500';
+            if (port) url += '&port=' + encodeURIComponent(port);
+            if (vessel) url += '&vessel=' + encodeURIComponent(vessel);
+            if (fromDate) url += '&start_date=' + encodeURIComponent(fromDate);
+            if (toDate) url += '&end_date=' + encodeURIComponent(toDate);
+
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('Failed to load logs');
+
+                const data = await response.json();
+                allLogs = data.calculations || [];
+
+                displayLogsPage(currentPage);
+                spinner.style.display = 'none';
+                status.textContent = `Showing ${Math.min(logsPerPage, allLogs.length)} of ${allLogs.length} calculations`;
+
+            } catch (error) {
+                spinner.style.display = 'none';
+                status.textContent = 'Error loading logs: ' + error.message;
+            }
+        }
+
+        function displayLogsPage(page) {
+            const start = (page - 1) * logsPerPage;
+            const end = start + logsPerPage;
+            const pageData = allLogs.slice(start, end);
+
+            const tbody = document.getElementById('logs-tbody');
+            tbody.innerHTML = '';
+
+            if (pageData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="no-data">No calculations found.</td></tr>';
+                document.getElementById('logs-pagination').innerHTML = '';
+                return;
+            }
+
+            pageData.forEach(log => {
+                const row = document.createElement('tr');
+                const timestamp = new Date(log.timestamp).toLocaleString();
+                const status = log.status === 'success' ?
+                    '<span class="status-badge success">Success</span>' :
+                    '<span class="status-badge error">Error</span>';
+
+                row.innerHTML = `
+                    <td>${timestamp}</td>
+                    <td>${log.vessel_name || '-'}</td>
+                    <td>${log.port || '-'}</td>
+                    <td style="text-align: right; font-weight: 600;">R ${parseFloat(log.grand_total || 0).toFixed(2)}</td>
+                    <td>${status}</td>
+                    <td><button class="view-btn" onclick="viewLogDetail('${log.calculation_id}')">View</button></td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            // Pagination
+            const totalPages = Math.ceil(allLogs.length / logsPerPage);
+            const paginationDiv = document.getElementById('logs-pagination');
+            paginationDiv.innerHTML = '';
+
+            for (let i = 1; i <= totalPages; i++) {
+                const btn = document.createElement('button');
+                btn.textContent = i;
+                btn.className = i === currentPage ? 'active' : '';
+                btn.onclick = () => {
+                    currentPage = i;
+                    displayLogsPage(i);
+                    document.querySelector('.logs-table').scrollIntoView({ behavior: 'smooth' });
+                };
+                paginationDiv.appendChild(btn);
+            }
+        }
+
+        async function viewLogDetail(calculationId) {
+            try {
+                const response = await fetch(`/api/v1/logs/${calculationId}`);
+                if (!response.ok) throw new Error('Failed to load details');
+
+                const detail = await response.json();
+                alert(`
+Calculation ID: ${detail.calculation_id}
+Vessel: ${detail.vessel_name}
+Port: ${detail.port}
+Confidence: ${(detail.extraction.confidence * 100).toFixed(0)}%
+Processing Time: ${detail.processing_time_ms}ms
+Status: ${detail.status}
+
+Charges Discovered: ${detail.extraction.charges_discovered}
+
+Grand Total: R ${parseFloat(detail.grand_total).toFixed(2)}
+                `);
+            } catch (error) {
+                alert('Error loading details: ' + error.message);
+            }
+        }
+
+        // Load logs on page load
+        window.addEventListener('load', () => {
+            loadLogs();
+            // Auto-refresh every 30 seconds
+            setInterval(loadLogs, 30000);
         });
     </script>
 </body>
