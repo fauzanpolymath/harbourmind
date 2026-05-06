@@ -8,7 +8,13 @@ dist/
 build/
 
 # Environment
+# Never commit credentials or API keys
 .env
+.env.local
+.env.*.local
+.hmenv.txt
+.hmenv.*.txt
+*.env
 
 # Data (uploaded tariff documents — keep .gitkeep only)
 data/*

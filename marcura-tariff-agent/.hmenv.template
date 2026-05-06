@@ -1,0 +1,39 @@
+# ── IMPORTANT: DO NOT COMMIT THIS FILE ────────────────────────────────────────
+# This file is gitignored. For local development:
+# 1. Copy this file: cp .hmenv.template .hmenv.txt
+# 2. Fill in your actual API keys
+# 3. Never commit .hmenv.txt or share it
+# 4. Use environment variables in production (Cloud Run, Docker, etc.)
+# ────────────────────────────────────────────────────────────────────────────────
+
+# ── LLM ───────────────────────────────────────────────────────────────────────
+# Get from: https://aistudio.google.com/app/apikeys
+GEMINI_API_KEY=your-gemini-api-key-here
+
+# LLM Model
+GEMINI_MODEL=gemini-2.5-flash
+
+# ── Document parsing ──────────────────────────────────────────────────────────
+# Get from: https://www.llamaindex.ai/ (LlamaIndex/LlamaParse)
+LLAMAPARSE_API_KEY=your-llamaparse-api-key-here
+
+# ── GCP / Cloud ───────────────────────────────────────────────────────────────
+# Get from: https://console.cloud.google.com/
+# Project ID from: gcloud config get-value project
+GCP_PROJECT_ID=your-gcp-project-id-here
+
+# GCS bucket for logs (will be created during deployment)
+GCS_BUCKET_NAME=harbourmind-logs-your-project-id
+
+# CORS origins (allow specific domains in production)
+CORS_ORIGINS=*
+
+# ── Application ───────────────────────────────────────────────────────────────
+# dev, staging, production
+APP_ENV=development
+
+# DEBUG, INFO, WARNING, ERROR
+LOG_LEVEL=INFO
+
+# Local data directory for uploads
+DATA_DIR=./data

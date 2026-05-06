@@ -27,11 +27,16 @@ _PROJECT_ROOT = Path(__file__).resolve().parents[2]
 _ENV_FILE = _PROJECT_ROOT / ".hmenv.txt"
 
 # Load .hmenv.txt if it exists, otherwise fall back to .env
+# NOTE: .hmenv.txt is gitignored and should contain local development secrets
 if _ENV_FILE.exists():
     load_dotenv(_ENV_FILE)
 else:
+    # Try .env next
     _ENV_FILE = _PROJECT_ROOT / ".env"
-    load_dotenv(_ENV_FILE)
+    if _ENV_FILE.exists():
+        load_dotenv(_ENV_FILE)
+    # If neither exists, environment variables must be set directly
+    # (useful for Cloud Run, Docker, CI/CD with secrets)
 
 logger = logging.getLogger(__name__)
 
@@ -49,13 +54,20 @@ class Config:
     # ------------------------------------------------------------------
     # LLM
     # ------------------------------------------------------------------
-    google_api_key: str
+    gemini_api_key: str
     gemini_model: str
 
     # ------------------------------------------------------------------
     # Document parsing
     # ------------------------------------------------------------------
-    llama_cloud_api_key: str
+    llamaparse_api_key: str
+
+    # ------------------------------------------------------------------
+    # GCP / Cloud
+    # ------------------------------------------------------------------
+    gcp_project_id: str
+    gcs_bucket_name: str
+    cors_origins: str
 
     # ------------------------------------------------------------------
     # Application
@@ -66,12 +78,17 @@ class Config:
 
     def __init__(self) -> None:
         # ── LLM ──────────────────────────────────────────────────────────
-        self.google_api_key = os.environ.get("GOOGLE_API_KEY", "")
+        self.gemini_api_key = os.environ.get("GEMINI_API_KEY", "")
         # Use gemini-2.5-flash as default (latest fast model)
         self.gemini_model = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
 
         # ── Document parsing ─────────────────────────────────────────────
-        self.llama_cloud_api_key = os.environ.get("LLAMA_CLOUD_API_KEY", "")
+        self.llamaparse_api_key = os.environ.get("LLAMAPARSE_API_KEY", "")
+
+        # ── GCP / Cloud ──────────────────────────────────────────────────
+        self.gcp_project_id = os.environ.get("GCP_PROJECT_ID", "")
+        self.gcs_bucket_name = os.environ.get("GCS_BUCKET_NAME", "harbourmind-logs")
+        self.cors_origins = os.environ.get("CORS_ORIGINS", "*")
 
         # ── Application ──────────────────────────────────────────────────
         self.app_env = os.environ.get("APP_ENV", "development")
@@ -79,25 +96,25 @@ class Config:
         self.data_dir = Path(os.environ.get("DATA_DIR", str(_PROJECT_ROOT / "data")))
 
         # ── Validation ───────────────────────────────────────────────────
-        if not self.google_api_key:
-            raise ValueError(
-                "GOOGLE_API_KEY is not set.  "
-                f"Add it to your .hmenv.txt file at: {_ENV_FILE}"
+        if not self.gemini_api_key:
+            logger.warning(
+                "GEMINI_API_KEY is not set. Add it to your .hmenv.txt file or set it as an environment variable."
             )
 
-        if not self.llama_cloud_api_key:
+        if not self.llamaparse_api_key:
             logger.warning(
-                "LLAMA_CLOUD_API_KEY is not set — document parsing will be unavailable."
+                "LLAMAPARSE_API_KEY is not set — document parsing will be unavailable."
             )
 
     def __repr__(self) -> str:
         masked_key = (
-            f"{self.google_api_key[:6]}...{self.google_api_key[-4:]}"
-            if len(self.google_api_key) > 10
+            f"{self.gemini_api_key[:6]}...{self.gemini_api_key[-4:]}"
+            if len(self.gemini_api_key) > 10
             else "***"
         )
         return (
             f"Config(model={self.gemini_model!r}, "
             f"env={self.app_env!r}, "
-            f"google_api_key={masked_key!r})"
+            f"project={self.gcp_project_id!r}, "
+            f"gemini_api_key={masked_key!r})"
         )
