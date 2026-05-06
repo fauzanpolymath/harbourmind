@@ -69,6 +69,14 @@ class VesselProfile(BaseModel):
         None, description="Expected duration of port stay in days"
     )
 
+    # Certificate-specific parameters
+    days_alongside: Optional[float] = Field(
+        None, description="Days alongside in port (from shipping certificate, e.g. 3.39)"
+    )
+    number_of_operations: Optional[int] = Field(
+        None, description="Number of port operations/movements (from shipping certificate)"
+    )
+
     class Config:
         # Allow extra fields so the LLM can include additional context without
         # causing validation errors during early development.

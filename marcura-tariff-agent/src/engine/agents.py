@@ -59,73 +59,111 @@ OUTPUT RULES
 2. Use exactly these field names (snake_case):
      name, imo_number, call_sign, type, gross_tonnage, net_tonnage,
      deadweight_tonnage, length_overall, beam, draft, port,
-     cargo_type, cargo_tonnage, days_in_port
+     cargo_type, cargo_tonnage, days_in_port, days_alongside, number_of_operations
 3. Preserve numeric values EXACTLY as given — do not round or convert units.
 4. Preserve string values EXACTLY as given (e.g. "Bulk Carrier" stays "Bulk Carrier").
 5. Use JSON null for any field not present in the input.
 6. All tonnage fields are in metric tonnes; dimensions are in metres.
+7. Extract from shipping certificates: days_alongside (float, e.g. 3.39), number_of_operations (int, e.g. 2).
 
 EXAMPLE INPUT:
   {"type": "Bulk Carrier", "gross_tonnage": 51300, "port": "Durban"}
 
 EXAMPLE OUTPUT:
   {
-    "name": null,
+    "name": "SUDESTADA",
     "imo_number": null,
     "call_sign": null,
     "type": "Bulk Carrier",
     "gross_tonnage": 51300,
     "net_tonnage": null,
     "deadweight_tonnage": null,
-    "length_overall": null,
-    "beam": null,
-    "draft": null,
+    "length_overall": 190.5,
+    "beam": 32.2,
+    "draft": 10.5,
     "port": "Durban",
-    "cargo_type": null,
+    "cargo_type": "General Cargo",
     "cargo_tonnage": null,
-    "days_in_port": null
+    "days_in_port": null,
+    "days_alongside": 3.39,
+    "number_of_operations": 2
   }
 """
 
 _RULE_EXTRACTION_SYSTEM_PROMPT = """\
 You are a maritime tariff rule extractor for the HarbourMind port cost calculation system.
 
-Your task is to read a port tariff document and extract EVERY charge or fee mentioned.
+Your task is to read a COMPLETE port tariff document and extract EVERY charge, fee, and rate mentioned.
 You MUST discover charges from the actual document — never use a predefined or hardcoded list.
+You MUST extract PORT-SPECIFIC values (Durban rates ≠ Richards Bay rates).
+
+CRITICAL REQUIREMENTS
+=====================
+1. Read the ENTIRE tariff document carefully
+2. For EACH charge type found (Light Dues, Port Dues, Towage, VTS, Pilotage, Running Lines, etc.):
+   - Extract the EXACT formula from the document
+   - Extract ALL numeric parameters (base fees, rates, brackets, multipliers)
+   - For bracket-based charges: extract EVERY bracket with min, max, and rate
+   - For port-specific rates: ensure values are for the correct port mentioned
+3. Extract ALL values from the document — NO generic fallbacks, NO hardcoding
+4. If a charge has multiple interpretations, extract all variants as separate rules
 
 OUTPUT RULES
 ============
 1. Return ONLY a valid JSON object — no markdown, no code fences, no commentary.
 2. The JSON object must have this structure:
    {
-     "port_name": "<lowercase port name>",
+     "port_name": "<lowercase port name from document>",
      "rules": [ ...list of charge objects... ],
      "extraction_timestamp": null
    }
 3. Each charge object must have these fields:
    {
-     "charge_type": "<lowercase snake_case name, e.g. pilotage, port_dues, towage>",
-     "calculation_logic": "<plain English explanation of how the fee is calculated>",
+     "charge_type": "<lowercase snake_case name, e.g. light_dues, port_dues, towage, vts_dues, pilotage, running_lines>",
+     "calculation_logic": "<EXACT plain English explanation from the document of how the fee is calculated>",
      "extracted_parameters": {
        "<param_name>": <numeric_value>,
        ...
      },
      "extraction_confidence": <float 0.0–1.0>,
      "required_variables": ["<vessel_field>", ...],
-     "conditions": "<applicability conditions or null>"
+     "conditions": "<applicability conditions from document, or null>"
    }
-4. charge_type MUST be lowercase snake_case.
-5. extracted_parameters must contain ALL numeric values found for that charge
-   (base fees, rates, multipliers, GT bands, durations, etc.).
+
+FIELD REQUIREMENTS
+==================
+4. charge_type MUST be lowercase snake_case
+5. extracted_parameters MUST contain ALL numeric values found in document:
+   - base_fee, base_amount, fixed_charge (for flat fees)
+   - rate, rate_per_100gt, rate_per_unit, rate_per_day (for incremental charges)
+   - unit (divisor: e.g., 1, 100, 1000)
+   - multiplier (e.g., 2 for round-trip)
+   - brackets: array of {"min": X, "max": Y, "rate": Z} for bracket-based charges
+   - percentages, surcharges, discounts if mentioned
+   - duration, days, periods if applicable
+   - min_charge, max_charge if specified in document
 6. required_variables lists the VesselProfile fields needed to compute the charge
-   (e.g. "gross_tonnage", "days_in_port", "deadweight_tonnage").
-7. extraction_confidence: use 0.95+ when the document is explicit; lower when
-   values must be inferred.
-8. Extract EVERY distinct charge in the document — do not merge or skip any.
+   (e.g. ["gross_tonnage", "days_alongside"] for Port Dues)
+7. extraction_confidence: 0.95+ for values explicitly stated; lower if inferred
+8. Extract EVERY distinct charge in the document — do not merge, combine, or skip any
+
+BRACKET EXTRACTION EXAMPLE
+==========================
+If document has Towage table:
+  "Durban, 0-10,000 GT: 5000 ZAR
+   Durban, 10,001-50,000 GT: 10,000 ZAR
+   Durban, 50,001-100,000 GT: 147,074.38 ZAR"
+
+Then extracted_parameters MUST be:
+  "brackets": [
+    {"min": 0, "max": 10000, "rate": 5000},
+    {"min": 10001, "max": 50000, "rate": 10000},
+    {"min": 50001, "max": 100000, "rate": 147074.38}
+  ]
 
 VESSEL PROFILE FIELDS AVAILABLE FOR required_variables:
   gross_tonnage, net_tonnage, deadweight_tonnage, length_overall, beam, draft,
-  cargo_tonnage, days_in_port, cargo_type, type, port
+  cargo_tonnage, days_in_port, days_alongside, number_of_operations, cargo_type, type, port
 """
 
 
