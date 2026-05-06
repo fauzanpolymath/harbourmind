@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+*.egg-info/
+dist/
+build/
+
+# Environment
+.env
+
+# Data (uploaded tariff documents — keep .gitkeep only)
+data/*
+!data/.gitkeep
+
+# Docker
+*.log
+
+# IDE
+.vscode/
+.idea/
