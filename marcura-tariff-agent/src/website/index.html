@@ -1136,6 +1136,58 @@
         }
         .sample-download:hover { color: #14b8a6; border-bottom-color: #14b8a6; }
 
+        /* Vessel-input mode toggle (PDF vs natural-language text) */
+        .input-mode-toggle {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 14px;
+            background: rgba(15, 23, 42, 0.5);
+            padding: 3px;
+            border-radius: 6px;
+        }
+        .input-mode-toggle button {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            padding: 6px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s ease;
+        }
+        .input-mode-toggle button:hover {
+            color: #cbd5e1;
+        }
+        .input-mode-toggle button.active {
+            background: rgba(20, 184, 166, 0.18);
+            color: #14b8a6;
+            font-weight: 600;
+        }
+        .vessel-text-input {
+            width: 100%;
+            min-height: 130px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(100, 116, 139, 0.3);
+            border-radius: 6px;
+            color: #e2e8f0;
+            padding: 12px;
+            font-family: inherit;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+        .vessel-text-input:focus {
+            outline: none;
+            border-color: #14b8a6;
+            background: rgba(15, 23, 42, 0.8);
+        }
+        .vessel-text-input::placeholder {
+            color: #64748b;
+        }
+        .hidden { display: none !important; }
+
         .submit-btn {
             display: block;
             margin: 30px auto;
@@ -1486,7 +1538,7 @@
             <aside class="workspace-left">
                 <div class="left-inner">
                     <h2 class="ws-title">Test it yourself</h2>
-                    <p class="ws-subtitle">Upload a port tariff PDF and a vessel certificate PDF to calculate charges instantly.</p>
+                    <p class="ws-subtitle">Upload a port tariff PDF and either a vessel certificate or a plain-text description — the agent extracts everything it needs.</p>
 
                     <div class="upload-area">
                         <div class="upload-box" onclick="document.getElementById('tariff-pdf').click()">
@@ -1500,15 +1552,31 @@
                                 <a class="sample-download" href="/sample/tariff" download="Port_Tariff.pdf" title="Download the sample tariff PDF">↓ download</a>
                             </div>
                         </div>
-                        <div class="upload-box" onclick="document.getElementById('vessel-pdf').click()">
+                        <div class="upload-box" id="vessel-box">
                             <h3>🚢 Vessel Details</h3>
-                            <p>Upload vessel certificate PDF</p>
-                            <small style="color: #64748b;">.pdf files only</small>
-                            <input type="file" id="vessel-pdf" accept=".pdf" onchange="updateFileName(this, 'vessel-name')">
-                            <span id="vessel-name" class="file-name"></span>
-                            <div class="sample-row" onclick="event.stopPropagation()">
-                                <button type="button" class="sample-btn" onclick="useSample('vessel-pdf', 'vessel-name', '/sample/vessel', 'Shipping_Certificate.pdf')">Use Sample</button>
-                                <a class="sample-download" href="/sample/vessel" download="Shipping_Certificate.pdf" title="Download the sample shipping certificate PDF">↓ download</a>
+
+                            <div class="input-mode-toggle" onclick="event.stopPropagation()">
+                                <button type="button" class="active" data-mode="pdf" onclick="switchVesselMode('pdf')">📄 Upload PDF</button>
+                                <button type="button" data-mode="text" onclick="switchVesselMode('text')">✍️ Describe vessel</button>
+                            </div>
+
+                            <div id="vessel-pdf-mode" onclick="document.getElementById('vessel-pdf').click()">
+                                <p>Upload vessel certificate PDF</p>
+                                <small style="color: #64748b;">.pdf files only</small>
+                                <input type="file" id="vessel-pdf" accept=".pdf" onchange="updateFileName(this, 'vessel-name')">
+                                <span id="vessel-name" class="file-name"></span>
+                                <div class="sample-row" onclick="event.stopPropagation()">
+                                    <button type="button" class="sample-btn" onclick="useSample('vessel-pdf', 'vessel-name', '/sample/vessel', 'Shipping_Certificate.pdf')">Use Sample</button>
+                                    <a class="sample-download" href="/sample/vessel" download="Shipping_Certificate.pdf" title="Download the sample shipping certificate PDF">↓ download</a>
+                                </div>
+                            </div>
+
+                            <div id="vessel-text-mode" class="hidden" onclick="event.stopPropagation()">
+                                <p>Describe the vessel in natural language</p>
+                                <textarea id="vessel-text" class="vessel-text-input" placeholder="e.g. SUDESTADA, Malta-flagged bulk carrier built 2010, GT 51,300, LOA 229.2 m, exporting iron ore from Durban, 3.39 days alongside, 2 operations..."></textarea>
+                                <div class="sample-row">
+                                    <button type="button" class="sample-btn" onclick="useSampleText()">Use Sample</button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -2364,16 +2432,52 @@
             }
         }
 
+        // ========== VESSEL INPUT MODE TOGGLE ==========
+        // Switches between PDF upload and natural-language description.
+        // The active mode is read off the toggle button's .active class at
+        // calculation time — no global state to keep in sync.
+        function switchVesselMode(mode) {
+            const buttons = document.querySelectorAll('.input-mode-toggle button');
+            buttons.forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+            document.getElementById('vessel-pdf-mode').classList.toggle('hidden', mode !== 'pdf');
+            document.getElementById('vessel-text-mode').classList.toggle('hidden', mode !== 'text');
+        }
+
+        // Sample natural-language description derived from the SUDESTADA spec
+        // in the take-home test brief — same source of truth as the PDF sample.
+        const SAMPLE_VESSEL_TEXT = "The SUDESTADA, a Malta-flagged bulk carrier built in 2010 (classification: Registro Italiano Navale), is calling at Durban to export 40,000 MT of iron ore. Gross tonnage 51,300, net tonnage 31,192, deadweight 93,274 MT, length overall 229.2 m, beam 38.0 m, moulded depth 20.7 m, LBP 222.0 m, salt-water draft 14.9 m, 7 cargo holds. The vessel is alongside for 3.39 days, with 2 operations. Arrival 15 November 2024 10:12, departure 22 November 2024 13:00.";
+
+        function useSampleText() {
+            const ta = document.getElementById('vessel-text');
+            ta.value = SAMPLE_VESSEL_TEXT;
+            ta.focus();
+        }
+
         // ========== CALCULATE TARIFFS ==========
         async function calculateTariffs() {
             const tariffFile = document.getElementById('tariff-pdf').files[0];
-            const vesselFile = document.getElementById('vessel-pdf').files[0];
             const errorDiv = document.getElementById('error-message');
             const btn = document.getElementById('calculate-btn');
             const resultsSection = document.getElementById('results-section');
 
-            if (!tariffFile || !vesselFile) {
-                errorDiv.textContent = 'Please upload both files before calculating.';
+            // Detect active vessel-input mode from the toggle.
+            const activeModeBtn = document.querySelector('.input-mode-toggle button.active');
+            const vesselMode = activeModeBtn ? activeModeBtn.dataset.mode : 'pdf';
+            const vesselFile = document.getElementById('vessel-pdf').files[0];
+            const vesselText = (document.getElementById('vessel-text').value || '').trim();
+
+            if (!tariffFile) {
+                errorDiv.textContent = 'Please upload a port tariff PDF before calculating.';
+                errorDiv.classList.add('active');
+                return;
+            }
+            if (vesselMode === 'pdf' && !vesselFile) {
+                errorDiv.textContent = 'Please upload a vessel certificate PDF (or switch to "Describe vessel").';
+                errorDiv.classList.add('active');
+                return;
+            }
+            if (vesselMode === 'text' && !vesselText) {
+                errorDiv.textContent = 'Please describe the vessel (or switch to "Upload PDF").';
                 errorDiv.classList.add('active');
                 return;
             }
@@ -2384,10 +2488,17 @@
 
             const formData = new FormData();
             formData.append('tariff_pdf', tariffFile);
-            formData.append('vessel_pdf', vesselFile);
+            const endpoint = vesselMode === 'text'
+                ? '/api/v1/calculate-from-text'
+                : '/api/v1/calculate-from-pdfs';
+            if (vesselMode === 'text') {
+                formData.append('vessel_query', vesselText);
+            } else {
+                formData.append('vessel_pdf', vesselFile);
+            }
 
             try {
-                const response = await fetch('/api/v1/calculate-from-pdfs', {
+                const response = await fetch(endpoint, {
                     method: 'POST',
                     body: formData
                 });

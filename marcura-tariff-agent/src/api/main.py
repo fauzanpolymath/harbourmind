@@ -203,6 +203,21 @@ async def extract_vessel_from_pdf(pdf_content: bytes) -> VesselProfile:
     except Exception as e:
         raise ValueError(f'Failed to extract vessel from PDF: {str(e)}')
 
+def extract_vessel_from_text(text: str) -> VesselProfile:
+    """
+    Extract vessel profile from a free-text natural-language description.
+
+    Same agent (VesselQueryParserAgent) as the PDF path — only difference is
+    the LlamaParse hop is skipped because the text is already plain text.
+    """
+    if not text or not text.strip():
+        raise ValueError('Vessel query is empty.')
+    try:
+        agent = get_vessel_parser_agent()
+        return agent.execute(text)
+    except Exception as e:
+        raise ValueError(f'Failed to parse vessel query: {str(e)}')
+
 async def execute_calculation_with_agents(vessel_profile: VesselProfile, rules: RuleStore, target_dues: Optional[List[str]] = None) -> tuple:
     """
     Execute tariff calculation using PerRuleCalculator (async, parallel).
@@ -258,24 +273,153 @@ async def execute_calculation_with_agents(vessel_profile: VesselProfile, rules: 
 @app.get('/health', status_code=200)
 async def health_check():
     return {'status': 'healthy', 'service': 'HarbourMind Tariff Calculator', 'timestamp': datetime.utcnow().isoformat()}
+async def _build_calculation_response(
+    rules: RuleStore,
+    vessel_profile: VesselProfile,
+    calculation_id: str,
+    start_time: datetime,
+    tariff_label: str,
+    vessel_label: str,
+) -> dict:
+    """
+    Shared post-extraction pipeline: run the per-rule calculator, assemble
+    totals and the response, and persist the log entry.
+
+    Both /calculate-from-pdfs and /calculate-from-text feed into this helper
+    once their respective inputs have been turned into a RuleStore and a
+    VesselProfile. Keeping the response-building in one place ensures the
+    two endpoints always emit identical shapes.
+    """
+    # Step 3: Calculate using EXTRACTED rules (NOT hardcoded)
+    charges, trace_log, skipped_rules, clarifications = await execute_calculation_with_agents(vessel_profile, rules, target_dues=None)
+
+    # Step 4: Totals — tax rate and currency come from the tariff
+    # (extracted by the rule extraction agent), not hardcoded.
+    subtotal = sum(Decimal(str(c.amount)) for c in charges)
+    tax_rate_decimal = Decimal(str(rules.tax_rate)) if rules.tax_rate else Decimal('0')
+    vat_amount = subtotal * tax_rate_decimal
+    grand_total = subtotal + vat_amount
+    tax_rate_value = float(rules.tax_rate) if rules.tax_rate is not None else 0.0
+    tax_label = rules.tax_label or 'Tax'
+    currency = rules.currency or ''
+
+    processing_time_ms = int((datetime.utcnow() - start_time).total_seconds() * 1000)
+
+    # Create charge outputs with extracted confidence scores
+    charge_outputs = []
+    for charge in charges:
+        # Find corresponding rule to get extraction_confidence
+        rule = next((r for r in rules.rules if r.charge_type == charge.charge_type), None)
+        confidence = rule.extraction_confidence if rule else 0.90
+
+        charge_outputs.append({
+            'charge_type': charge.charge_type,
+            'description': charge.description,
+            'amount': float(charge.amount),
+            'confidence': float(confidence),  # ← EXTRACTED confidence, not hardcoded
+            'trace': charge.trace if charge.trace else {}
+        })
+
+    avg_confidence = float(
+        sum(r.extraction_confidence for r in rules.rules) / len(rules.rules)
+    ) if rules.rules else 0.0
+
+    log_data = {
+        'calculation_id': calculation_id,
+        'timestamp': start_time.isoformat() + 'Z',
+        'vessel_name': vessel_profile.name,
+        # Surface every field the parser extracted — no field privileged in code.
+        'vessel_details': vessel_profile.model_dump(exclude_none=True),
+        'port': rules.port_name,
+        'tariff_file': tariff_label,
+        'vessel_file': vessel_label,
+        'extraction': {
+            'charges_discovered': len(charges),
+            'rules_extracted': len(rules.rules),
+            'average_confidence': avg_confidence,
+            'time_ms': processing_time_ms
+        },
+        'charges': charge_outputs,
+        'currency': currency,
+        'subtotal': float(subtotal),
+        'tax_rate': tax_rate_value,
+        'tax_label': tax_label,
+        'tax_amount': float(vat_amount),
+        'grand_total': float(grand_total),
+        'processing_time_ms': processing_time_ms,
+        'status': 'success'
+    }
+    _calculation_logs[calculation_id] = log_data
+
+    return {
+        'calculation_id': calculation_id,
+        'vessel_name': vessel_profile.name,
+        'vessel_details': vessel_profile.model_dump(exclude_none=True),
+        'port': rules.port_name,
+        'charges': charge_outputs,
+        'extraction': {
+            'rules_count': len(rules.rules),
+            'average_confidence': avg_confidence,
+        },
+        'currency': currency,
+        'subtotal': float(subtotal),
+        'tax_rate': tax_rate_value,
+        'tax_label': tax_label,
+        'tax_amount': float(vat_amount),
+        'grand_total': float(grand_total),
+        'processing_time_ms': processing_time_ms,
+        'status': 'success',
+        'skipped_rules': skipped_rules,
+        'skipped_count': len(skipped_rules),
+        'needs_clarification': clarifications,
+        'clarification_count': len(clarifications),
+        'note': 'All values extracted from inputs - zero hardcoding'
+    }
+
+
+def _record_failure_and_raise(
+    exc: Exception,
+    calculation_id: str,
+    start_time: datetime,
+    tariff_label: str,
+    vessel_label: str,
+    error_code: str = 'PDF_PROCESSING_ERROR',
+) -> None:
+    """Log the failure to the in-memory log dict and raise an HTTPException."""
+    import logging, traceback
+    print(f"\n[ENDPOINT] *** EXCEPTION *** {type(exc).__name__}: {exc}", flush=True)
+    traceback.print_exc()
+    logging.error(f"Calculation failed: {exc}", exc_info=True)
+
+    processing_time_ms = int((datetime.utcnow() - start_time).total_seconds() * 1000)
+    _calculation_logs[calculation_id] = {
+        'calculation_id': calculation_id,
+        'timestamp': start_time.isoformat() + 'Z',
+        'vessel_name': 'Unknown',
+        'port': 'Unknown',
+        'tariff_file': tariff_label,
+        'vessel_file': vessel_label,
+        'processing_time_ms': processing_time_ms,
+        'status': 'error',
+        'error': str(exc),
+    }
+
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail={'message': str(exc), 'code': error_code}
+    )
+
+
 @app.post('/api/v1/calculate-from-pdfs', status_code=200)
 async def calculate_from_pdfs(
     tariff_pdf: UploadFile = File(...),
     vessel_pdf: UploadFile = File(...)
 ):
     """
-    Calculate tariffs from uploaded PDF files with FULL DYNAMIC EXTRACTION.
+    Calculate tariffs from uploaded tariff and vessel PDFs.
 
-    Process:
-    1. Tariff PDF → RuleExtractionAgent extracts ALL rules, rates, brackets
-    2. Vessel PDF → VesselQueryParserAgent extracts vessel data including days_alongside
-    3. CalculationAgent → Maps rules to calculators and calculates using EXTRACTED parameters
-    4. ALL values come from PDFs, ZERO hardcoding
-
-    Returns:
-    - All charges with extraction confidence scores
-    - Full trace of extracted rules and parameters
-    - Ground-truth calculation with no fallback values
+    Both inputs run through LlamaParse → Gemini-driven agents to extract
+    rules and vessel data dynamically; no hardcoded values.
     """
     start_time = datetime.utcnow()
     calculation_id = f"calc_{uuid.uuid4().hex[:12]}"
@@ -287,7 +431,6 @@ async def calculate_from_pdfs(
     print(f"{'='*60}", flush=True)
 
     try:
-        # Step 1: Extract tariff rules from PDF (DYNAMIC - no hardcoding)
         tariff_content = await tariff_pdf.read()
         print(f"[ENDPOINT] Read {len(tariff_content)} bytes from tariff PDF", flush=True)
         rules = await extract_tariff_from_pdf(tariff_content)
@@ -299,7 +442,6 @@ async def calculate_from_pdfs(
                 'Check that PDF contains valid tariff information.'
             )
 
-        # Step 2: Extract vessel from PDF (DYNAMIC - no hardcoding)
         vessel_content = await vessel_pdf.read()
         vessel_profile = await extract_vessel_from_pdf(vessel_content)
 
@@ -309,119 +451,77 @@ async def calculate_from_pdfs(
                 'Check that PDF is a valid shipping certificate.'
             )
 
-        # Step 3: Calculate using EXTRACTED rules (NOT hardcoded)
-        charges, trace_log, skipped_rules, clarifications = await execute_calculation_with_agents(vessel_profile, rules, target_dues=None)
+        return await _build_calculation_response(
+            rules=rules,
+            vessel_profile=vessel_profile,
+            calculation_id=calculation_id,
+            start_time=start_time,
+            tariff_label=tariff_pdf.filename,
+            vessel_label=vessel_pdf.filename,
+        )
 
-        # Calculate totals — tax rate and currency come from the tariff
-        # (extracted by the rule extraction agent), not hardcoded.
-        subtotal = sum(Decimal(str(c.amount)) for c in charges)
-        tax_rate_decimal = Decimal(str(rules.tax_rate)) if rules.tax_rate else Decimal('0')
-        vat_amount = subtotal * tax_rate_decimal
-        grand_total = subtotal + vat_amount
-        tax_rate_value = float(rules.tax_rate) if rules.tax_rate is not None else 0.0
-        tax_label = rules.tax_label or 'Tax'
-        currency = rules.currency or ''
+    except Exception as exc:
+        _record_failure_and_raise(
+            exc, calculation_id, start_time,
+            tariff_label=tariff_pdf.filename,
+            vessel_label=vessel_pdf.filename,
+        )
 
-        # Calculate processing time
-        processing_time_ms = int((datetime.utcnow() - start_time).total_seconds() * 1000)
 
-        # Create charge outputs with extracted confidence scores
-        charge_outputs = []
-        for charge in charges:
-            # Find corresponding rule to get extraction_confidence
-            rule = next((r for r in rules.rules if r.charge_type == charge.charge_type), None)
-            confidence = rule.extraction_confidence if rule else 0.90
+@app.post('/api/v1/calculate-from-text', status_code=200)
+async def calculate_from_text(
+    tariff_pdf: UploadFile = File(...),
+    vessel_query: str = Form(...),
+):
+    """
+    Calculate tariffs from a tariff PDF + a natural-language vessel query.
 
-            charge_outputs.append({
-                'charge_type': charge.charge_type,
-                'description': charge.description,
-                'amount': float(charge.amount),
-                'confidence': float(confidence),  # ← EXTRACTED confidence, not hardcoded 0.92
-                'trace': charge.trace if charge.trace else {}
-            })
+    The vessel description is plain text — the same VesselQueryParserAgent
+    extracts fields from prose; no shipping-certificate PDF required.
+    """
+    start_time = datetime.utcnow()
+    calculation_id = f"calc_{uuid.uuid4().hex[:12]}"
 
-        # Store log
-        log_data = {
-            'calculation_id': calculation_id,
-            'timestamp': start_time.isoformat() + 'Z',
-            'vessel_name': vessel_profile.name,
-            # Surface every field the parser extracted — no field privileged in code.
-            # If the certificate had it, the response carries it.
-            'vessel_details': vessel_profile.model_dump(exclude_none=True),
-            'port': rules.port_name,
-            'tariff_file': tariff_pdf.filename,
-            'vessel_file': vessel_pdf.filename,
-            'extraction': {
-                'charges_discovered': len(charges),
-                'rules_extracted': len(rules.rules),
-                'average_confidence': float(
-                    sum(r.extraction_confidence for r in rules.rules) / len(rules.rules)
-                ) if rules.rules else 0.0,
-                'time_ms': processing_time_ms
-            },
-            'charges': charge_outputs,
-            'currency': currency,
-            'subtotal': float(subtotal),
-            'tax_rate': tax_rate_value,
-            'tax_label': tax_label,
-            'tax_amount': float(vat_amount),
-            'grand_total': float(grand_total),
-            'processing_time_ms': processing_time_ms,
-            'status': 'success'
-        }
+    vessel_label = f"vessel_query ({len(vessel_query)} chars)"
+    print(f"\n{'='*60}", flush=True)
+    print(f"[ENDPOINT] /calculate-from-text called - {calculation_id}", flush=True)
+    print(f"[ENDPOINT] tariff_pdf: {tariff_pdf.filename} ({tariff_pdf.content_type})", flush=True)
+    print(f"[ENDPOINT] {vessel_label}", flush=True)
+    print(f"{'='*60}", flush=True)
 
-        _calculation_logs[calculation_id] = log_data
+    try:
+        tariff_content = await tariff_pdf.read()
+        rules = await extract_tariff_from_pdf(tariff_content)
+        print(f"[ENDPOINT] Extracted {len(rules.rules)} tariff rules", flush=True)
 
-        return {
-            'calculation_id': calculation_id,
-            'vessel_name': vessel_profile.name,
-            'vessel_details': vessel_profile.model_dump(exclude_none=True),
-            'port': rules.port_name,
-            'charges': charge_outputs,
-            'extraction': {
-                'rules_count': len(rules.rules),
-                'average_confidence': float(
-                    sum(r.extraction_confidence for r in rules.rules) / len(rules.rules)
-                ) if rules.rules else 0.0,
-            },
-            'currency': currency,
-            'subtotal': float(subtotal),
-            'tax_rate': tax_rate_value,
-            'tax_label': tax_label,
-            'tax_amount': float(vat_amount),
-            'grand_total': float(grand_total),
-            'processing_time_ms': processing_time_ms,
-            'status': 'success',
-            'skipped_rules': skipped_rules,
-            'skipped_count': len(skipped_rules),
-            'needs_clarification': clarifications,
-            'clarification_count': len(clarifications),
-            'note': 'All values extracted from PDFs - zero hardcoding'
-        }
+        if not rules.rules:
+            raise ValueError(
+                f'No tariff rules extracted from {tariff_pdf.filename}. '
+                'Check that PDF contains valid tariff information.'
+            )
 
-    except Exception as e:
-        import logging, traceback
-        print(f"\n[ENDPOINT] *** EXCEPTION *** {type(e).__name__}: {e}", flush=True)
-        traceback.print_exc()
-        logging.error(f"PDF processing failed: {e}", exc_info=True)
+        vessel_profile = extract_vessel_from_text(vessel_query)
 
-        processing_time_ms = int((datetime.utcnow() - start_time).total_seconds() * 1000)
-        log_data = {
-            'calculation_id': calculation_id,
-            'timestamp': start_time.isoformat() + 'Z',
-            'vessel_name': 'Unknown',
-            'port': 'Unknown',
-            'tariff_file': tariff_pdf.filename,
-            'vessel_file': vessel_pdf.filename,
-            'processing_time_ms': processing_time_ms,
-            'status': 'error',
-            'error': str(e)
-        }
-        _calculation_logs[calculation_id] = log_data
+        if not vessel_profile.name:
+            raise ValueError(
+                'Could not extract vessel name from the query. '
+                'Include the vessel name in your description.'
+            )
 
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={'message': str(e), 'code': 'PDF_PROCESSING_ERROR'}
+        return await _build_calculation_response(
+            rules=rules,
+            vessel_profile=vessel_profile,
+            calculation_id=calculation_id,
+            start_time=start_time,
+            tariff_label=tariff_pdf.filename,
+            vessel_label=vessel_label,
+        )
+
+    except Exception as exc:
+        _record_failure_and_raise(
+            exc, calculation_id, start_time,
+            tariff_label=tariff_pdf.filename,
+            vessel_label=vessel_label,
         )
 
 @app.get('/api/v1/logs')
