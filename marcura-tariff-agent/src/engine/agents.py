@@ -199,6 +199,62 @@ SHORT TEST: would the per-rule calculator need to PICK BETWEEN variants?
 - If no (e.g. 50 commodity rows sharing a per-tonne rate, all selected by
   cargo type only): one rule with the table inside.
 
+MULTI-COMPONENT FEE STRUCTURES
+==============================
+Many charges combine a FIXED component with a VARIABLE component, often
+appearing as DIFFERENT ROWS of the SAME rate table:
+
+  - "Per Service" / "Per call" / "Boarding" / "Attendance" → fixed amount
+  - "Per 100 GT" / "Per metre" / "Per hour" / "Per ton" → variable rate
+
+When a charge's rate table has multiple rows for the SAME charge family
+(e.g. a "Per Service" row AND a "Per 100 tons" row, both under the same
+section heading), capture BOTH components as parameters of ONE rule:
+
+  "charge_type": "pilotage_basic_fee",
+  "extracted_parameters": {
+    "per_service_fee": 18608.61,
+    "rate_per_100_gt": 9.72
+  }
+
+Do NOT split them into separate rules. Do NOT drop the fixed component
+because it sits in a different row of the same table. The per-rule
+calculator combines them into a single formula like
+  (per_service_fee + (gt/100) * rate_per_100_gt) * operations.
+
+Skipping the fixed component is a major accuracy regression — the entry
+fee for a service is usually larger than the variable per-tonnage part.
+
+REQUIRED_VARIABLES — BASE FORMULA INPUTS ONLY
+=============================================
+`required_variables` lists vessel fields the BASE formula needs to compute
+the charge — nothing more. Fields that only trigger optional reductions
+or surcharges do NOT belong here.
+
+Reductions/surcharges (green-award discount, double-hull discount,
+coaster reduction, passenger-vessel reduction, after-hours surcharge,
+overstay surcharge, etc.) are conditional adjustments on the base
+amount. Their trigger flags ("has_green_award", "is_double_hulled",
+"after_hours", etc.) belong in extracted_parameters as factors, but they
+are NOT required to compute the base charge.
+
+Example — port_dues:
+  Base formula = (gt/100)*basic_fee + (gt/100)*incremental_fee*days_in_port
+  → required_variables = ["gross_tonnage", "days_in_port"]
+
+  Reduction factors (10% double-hulled, 35% coaster, 15% short-stay,
+  etc.) go in extracted_parameters as a "reductions" map. Their trigger
+  flags (has_green_award, is_double_hulled, vessel_type, etc.) are
+  recorded in extracted_parameters too, but NEVER added to
+  required_variables.
+
+Putting qualifier-trigger fields into required_variables causes the
+per-rule calculator to demand them up-front and emit false clarifications
+on charges that have a perfectly computable base rate. The base rule
+should compute on the data the document conditions on for the BASE
+formula — qualifier fields are only consulted IF the per-rule calculator
+decides a discount/surcharge applies.
+
 THAT'S IT
 =========
 Read the document. Extract charges. Return JSON.

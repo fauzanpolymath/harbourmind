@@ -104,10 +104,16 @@ _per_rule_calculator = None
 # ── On-disk cache for the (parsed_tariff_text + port) → RuleStore step ───
 _RULE_CACHE_DIR = Path(__file__).resolve().parents[2] / "data" / ".rule_cache"
 
+# Bump this whenever the rule-extraction prompt changes shape (new params,
+# new required_variables semantics, etc.). Old cached rules are then
+# ignored automatically — no manual cache wipe needed.
+_RULE_CACHE_VERSION = "v2"
+
 def _rule_cache_path(parsed_text: str) -> Path:
-    """Cache key is just the parsed text — same text → same rules, regardless of port label."""
+    """Cache key is parsed text + prompt version — same text + same prompt → same rules."""
     import hashlib
-    return _RULE_CACHE_DIR / f"{hashlib.sha256(parsed_text.encode('utf-8')).hexdigest()}.json"
+    digest = hashlib.sha256(parsed_text.encode('utf-8')).hexdigest()
+    return _RULE_CACHE_DIR / f"{digest}_{_RULE_CACHE_VERSION}.json"
 
 def _read_cached_rules(parsed_text: str):
     p = _rule_cache_path(parsed_text)
