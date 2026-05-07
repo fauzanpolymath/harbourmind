@@ -16,9 +16,11 @@ build/
 .hmenv.*.txt
 *.env
 
-# Data (uploaded tariff documents — keep .gitkeep only)
+# Data (uploaded tariff documents — keep .gitkeep + bundled samples only)
 data/*
 !data/.gitkeep
+!data/Port_Tariff.pdf
+!data/Shipping_Certificate.pdf
 
 # Docker
 *.log
