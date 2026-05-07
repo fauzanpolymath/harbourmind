@@ -2587,7 +2587,11 @@
                 const response = await fetch(`/api/v1/logs/${calculationId}`);
                 if (!response.ok) throw new Error('Failed to load details');
                 const detail = await response.json();
-                openDetailsModal(`Calculation ${detail.calculation_id || ''}`, detail);
+                const ts = detail.timestamp ? new Date(detail.timestamp).toLocaleString(undefined, {
+                    year: 'numeric', month: 'short', day: 'numeric',
+                    hour: '2-digit', minute: '2-digit'
+                }) : '';
+                openDetailsModal(ts ? `Calculation · ${ts}` : 'Calculation', detail);
             } catch (error) {
                 alert('Error loading details: ' + error.message);
             }
