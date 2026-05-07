@@ -29,12 +29,14 @@ _ENV_FILE = _PROJECT_ROOT / ".hmenv.txt"
 # Load .hmenv.txt if it exists, otherwise fall back to .env
 # NOTE: .hmenv.txt is gitignored and should contain local development secrets
 if _ENV_FILE.exists():
-    load_dotenv(_ENV_FILE)
+    # override=True ensures .hmenv.txt values take precedence over any
+    # stale shell env vars (e.g., an old GEMINI_API_KEY from a prior session)
+    load_dotenv(_ENV_FILE, override=True)
 else:
     # Try .env next
     _ENV_FILE = _PROJECT_ROOT / ".env"
     if _ENV_FILE.exists():
-        load_dotenv(_ENV_FILE)
+        load_dotenv(_ENV_FILE, override=True)
     # If neither exists, environment variables must be set directly
     # (useful for Cloud Run, Docker, CI/CD with secrets)
 

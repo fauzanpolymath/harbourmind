@@ -28,4 +28,4 @@ COPY . .
 EXPOSE 8000
 
 # Use production ASGI server config (uvicorn without --reload)
-CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000"]

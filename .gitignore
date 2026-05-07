@@ -1,0 +1,24 @@
+# ── Environment / secrets ────────────────────────────────────────
+.hmenv.txt
+.hmenv.*.txt
+.env
+.env.*
+
+# ── Claude Code workspace state ──────────────────────────────────
+.claude/
+
+# ── Python ───────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.venv/
+venv/
+
+# ── OS / editor cruft ────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+
+# ── Build / temp ─────────────────────────────────────────────────
+*.log
