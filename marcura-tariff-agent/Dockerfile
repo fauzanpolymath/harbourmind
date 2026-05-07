@@ -27,5 +27,7 @@ COPY . .
 
 EXPOSE 8000
 
-# Use production ASGI server config (uvicorn without --reload)
-CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Use production ASGI server config (uvicorn without --reload).
+# Shell form so ${PORT} is expanded at runtime — Render/Cloud Run inject a
+# dynamic PORT; falls back to 8000 for local Docker runs.
+CMD uvicorn src.api.main:app --host 0.0.0.0 --port ${PORT:-8000}
