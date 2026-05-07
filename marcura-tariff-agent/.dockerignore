@@ -30,9 +30,11 @@ build/
 .coverage
 htmlcov/
 
-# Data (don't need local data in Docker)
+# Data (bundle only sample PDFs + .gitkeep; exclude all uploads/cache)
 data/*
 !data/.gitkeep
+!data/Port_Tariff.pdf
+!data/Shipping_Certificate.pdf
 
 # Documentation
 *.md
