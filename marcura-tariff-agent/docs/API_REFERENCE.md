@@ -85,7 +85,7 @@ curl -X POST <base-url>/api/v1/calculate-from-pdfs \
     "days_alongside": 3.39,
     "number_of_operations": 2
   },
-  "port": "durban",
+  "port": "South African Ports (Transnet National Ports Authority)",
   "charges": [
     {
       "charge_type": "port_dues_basic",
@@ -169,7 +169,7 @@ curl -X POST <base-url>/api/v1/calculate-from-pdfs \
 | `tax_rate` | float | Tax rate extracted from the tariff (e.g. `0.15` for 15 %). `0.0` if the tariff does not declare an applicable local tax. |
 | `tax_label` | string | Tax label as written in the tariff (e.g. `"VAT"`, `"GST"`). `"Tax"` if not specified. |
 | `tax_amount` | float | `subtotal * tax_rate`. |
-| `grand_total` | float | `subtotal + vat_amount`. |
+| `grand_total` | float | `subtotal + tax_amount`. |
 | `processing_time_ms` | integer | Wall clock time for this request, including LlamaParse. |
 | `status` | `"success"` \| `"error"` | — |
 | `skipped_rules` | array<Skip\> | Rules deliberately not applied; each carries a reason. |
@@ -326,7 +326,7 @@ curl <base-url>/api/v1/logs?limit=10
       "calculation_id": "calc_a1b2c3d4e5f6",
       "timestamp": "2026-05-07T03:42:01.000Z",
       "vessel_name": "SUDESTADA",
-      "port": "durban",
+      "port": "South African Ports (Transnet National Ports Authority)",
       "grand_total": 649566.08,
       "status": "success",
       "processing_time_ms": 17240
@@ -373,9 +373,9 @@ curl <base-url>/api/v1/logs/calc_a1b2c3d4e5f6
 
 | Scenario | Wall time | LLM calls | Approx cost |
 |---|---:|---:|---:|
-| Cold run (both caches empty) | ~3 min | ~25 (1 rule extraction + ~22 per-rule batches + 1 vessel) | ~$0.01 |
-| Hot run (both caches warm) | ~17 s | ~22 per-rule batches | ~$0.01 |
-| Repeat with no rule changes | ~17 s | ~22 | ~$0.01 |
+| Cold run (both caches empty) | ~3 min | ~28 (1 rule extraction + ~25 per-rule batches + 1 vessel + 1 vessel-text) | ~$0.01 |
+| Hot run (both caches warm) | ~17 s | ~25 per-rule batches | ~$0.01 |
+| Repeat with no rule changes | ~17 s | ~25 | ~$0.01 |
 
 Caches are content-hashed on disk. Re-uploading the **same** tariff PDF
 hits the parse cache; re-running with the **same** parsed text + port name

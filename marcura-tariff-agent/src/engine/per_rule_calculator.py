@@ -428,6 +428,9 @@ class PerRuleCalculator:
 
         vessel_json = vessel_profile.model_dump(exclude_none=True)
         sibling_index = self._build_sibling_index(rule_store)
+        # Currency is extracted from the tariff document by RuleExtractionAgent;
+        # threading it onto the calculator avoids hardcoding "ZAR" in trace.unit.
+        self._currency = rule_store.currency or ""
         semaphore = asyncio.Semaphore(concurrency)
         t0 = time.monotonic()
 
@@ -723,7 +726,7 @@ class PerRuleCalculator:
                 "explanation": payload.get("explanation", ""),
                 "category_group": payload.get("category_group"),
                 "extraction_confidence": rule.extraction_confidence,
-                "unit": "ZAR",
+                "unit": getattr(self, "_currency", "") or "",
             },
         )
         return {"_kind": "computed", "_charge": charge}
