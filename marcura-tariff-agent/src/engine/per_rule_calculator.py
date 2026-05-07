@@ -188,6 +188,22 @@ GENERAL ANTI-STACKING & DEFAULTS
   cargo dues — surface them as a clarification with category_group="cargo_dues"
   so the user can decide whether to include them.
 
+REASONING ABOUT ABSENT DISCRIMINATORS
+=====================================
+When sibling rules differ on optional qualifiers — certifications, voluntary
+programs, structural features, registration categories, special memberships
+— and vessel data does NOT explicitly assert membership in any qualified
+variant:
+- Treat absence of evidence as the base case. Compute the base/default
+  variant (the rule whose conditions describe the broadest population:
+  no qualifying suffix, or wording like "all other vessels", "general").
+- Mark qualified siblings (suffixes like _green_award, _double_hull,
+  _coaster, _sa_registered, _eco, _member, etc.) as not_applicable with
+  skip_reason "vessel data does not assert this optional qualification".
+- Do NOT escalate to needs_clarification just because an optional
+  qualifier is unstated. Optional qualifications confer benefits; their
+  absence is the default state.
+
 PER-SERVICE / PER-OPERATION MULTIPLIER (deterministic rule — apply consistently)
 ================================================================================
 If the rule's calculation_logic OR charge_type indicates the charge is
