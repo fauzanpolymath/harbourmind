@@ -36,15 +36,15 @@ data/*
 !data/Port_Tariff.pdf
 !data/Shipping_Certificate.pdf
 
-# Documentation
-*.md
-docs/
+# Documentation — README.md and docs/ ship (served by app); dev-only docs excluded below
+# (No blanket *.md or docs/ exclusion — runtime endpoints rely on those files.)
 
 # Development
 .claude/
 SETUP.md
 DEPLOYMENT.md
 DOCKER_GCP_GUIDE.md
+SUBMISSION.MD
 
 # Logs
 *.log
